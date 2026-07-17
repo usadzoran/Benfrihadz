@@ -310,13 +310,17 @@ object SupabaseClient {
     val url: String
         get() {
             val configUrl = BuildConfig.SUPABASE_URL
-            return if (configUrl.startsWith("http")) configUrl else "https://qidegjmaufctggplgtp.supabase.co"
+            return if (configUrl.startsWith("http") && !configUrl.contains("your_supabase") && !configUrl.contains("SUPABASE_URL")) {
+                configUrl
+            } else {
+                "https://qidegjmaufctggplgtp.supabase.co"
+            }
         }
 
     val anonKey: String
         get() {
             val configKey = BuildConfig.SUPABASE_ANON_KEY
-            return if (configKey.isNotEmpty() && configKey != "your_supabase_anon_key_here") {
+            return if (configKey.startsWith("eyJ")) {
                 configKey
             } else {
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZGVnam1hdXpmY3RnZ3BsZ3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMjc1NTIsImV4cCI6MjA5OTgwMzU1Mn0.MWyFesO0xNP88MFEUZwVqb2lXHGFwhFD-DlWKpmPAmE"
