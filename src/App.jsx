@@ -192,7 +192,7 @@ export default function App() {
 
   const handleProviderRegister = async (e) => {
     e.preventDefault()
-    if (!regFirstName || !regLastName || !regMuni || !regAddress || !regPhone || !regCategory || !regPassword) {
+    if (!regFirstName || !regLastName || !regMuni || !regAddress || !regPhone || !regCategory) {
       showAlert('يرجى تعبئة جميع الحقول الإلزامية', 'error')
       return
     }
@@ -214,13 +214,13 @@ export default function App() {
       shortDescription: regShortDesc,
       yearsOfExperience: parseInt(regExperience) || 1,
       municipalities: regWorkMunis.length > 0 ? regWorkMunis.join(',') : regMuni,
-      password: regPassword
+      password: regPhone // كلمة المرور الافتراضية هي رقم الهاتف
     }
 
     const registered = await db.registerProvider(newProvider)
     setProviders(prev => [...prev, registered])
     
-    showAlert('تم تقديم طلب تسجيلك بنجاح! سيقوم المشرف بمراجعته قريباً.', 'success')
+    showAlert('تم تقديم طلب تسجيلك بنجاح! سيقوم المشرف بمراجعته قريباً. (رقم هاتفك هو كلمة المرور الخاصة بك دائمًا)', 'success')
     setIsProviderRegister(false)
     
     // Clear registration state
@@ -871,11 +871,11 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-extrabold text-slate-600 block">كلمة المرور الحاصة بك</label>
+                  <label className="text-xs font-extrabold text-slate-600 block">كلمة المرور الخاصة بك (هي رقم هاتفك افتراضياً)</label>
                   <input 
                     type="password" 
                     required
-                    placeholder="••••••••"
+                    placeholder="مثال: 0555123456"
                     value={providerLoginPass}
                     onChange={(e) => setProviderLoginPass(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-primary-500/10 text-xs sm:text-sm font-bold"
@@ -1038,17 +1038,7 @@ export default function App() {
                   ></textarea>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">رمز المرور الخاص بملفك الحرفي *</label>
-                  <input 
-                    type="password" 
-                    required
-                    placeholder="••••••••"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-bold"
-                  />
-                </div>
+                {/* تم إزالة حقل كلمة المرور أثناء التسجيل لتبسيط العملية وسيكون رقم الهاتف هو كلمة المرور الافتراضية */}
 
                 <button 
                   type="submit"
