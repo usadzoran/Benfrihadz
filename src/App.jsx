@@ -30,6 +30,8 @@ import confetti from 'canvas-confetti'
 export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState('seeker') // 'seeker', 'provider_auth', 'provider_dash', 'admin_auth', 'admin_dash'
+  const [showAdminTab, setShowAdminTab] = useState(false)
+  const [clickCount, setClickCount] = useState(0)
   
   // App Core Database States
   const [municipalities, setMunicipalities] = useState([])
@@ -101,6 +103,9 @@ export default function App() {
 
   useEffect(() => {
     loadDatabase()
+    if (window.location.search.includes('admin') || window.location.hash.includes('admin')) {
+      setShowAdminTab(true)
+    }
   }, [])
 
   // Auto-trigger impressions for approved craftspeople loaded on homepage
@@ -351,7 +356,20 @@ export default function App() {
             {/* Logo and App Title */}
             <div 
               className="flex items-center gap-3 cursor-pointer select-none"
-              onClick={() => { setActiveTab('seeker'); setSelectedProvider(null); setSelectedCategory(null); }}
+              onClick={() => {
+                setActiveTab('seeker');
+                setSelectedProvider(null);
+                setSelectedCategory(null);
+                setClickCount(prev => {
+                  const next = prev + 1;
+                  if (next >= 5) {
+                    setShowAdminTab(curr => !curr);
+                    showAlert('تم تعديل ظهور خيارات الإدارة 👑', 'success');
+                    return 0;
+                  }
+                  return next;
+                });
+              }}
             >
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary-200">
                 <Briefcase size={22} className="stroke-[2.5]" />
@@ -403,29 +421,31 @@ export default function App() {
                 <span className="sm:hidden">الحرفي</span>
               </button>
 
-              <button 
-                onClick={() => {
-                  if (activeTab.startsWith('admin')) {
-                    setActiveTab('seeker')
-                  } else {
-                    if (isAdminLoggedIn) {
-                      setActiveTab('admin_dash')
+              {showAdminTab && (
+                <button 
+                  onClick={() => {
+                    if (activeTab.startsWith('admin')) {
+                      setActiveTab('seeker')
                     } else {
-                      setActiveTab('admin_auth')
+                      if (isAdminLoggedIn) {
+                        setActiveTab('admin_dash')
+                      } else {
+                        setActiveTab('admin_auth')
+                      }
                     }
-                  }
-                  setSelectedProvider(null)
-                }}
-                className={`text-xs sm:text-sm font-bold py-2 sm:py-2.5 px-3 sm:px-5 rounded-xl transition-all flex items-center gap-2 ${
-                  activeTab.startsWith('admin') 
-                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' 
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                }`}
-              >
-                <UserIcon size={16} />
-                <span className="hidden sm:inline">لوحة الإدارة 👑</span>
-                <span className="sm:hidden">الإدارة</span>
-              </button>
+                    setSelectedProvider(null)
+                  }}
+                  className={`text-xs sm:text-sm font-bold py-2 sm:py-2.5 px-3 sm:px-5 rounded-xl transition-all flex items-center gap-2 ${
+                    activeTab.startsWith('admin') 
+                      ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' 
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                  }`}
+                >
+                  <UserIcon size={16} />
+                  <span className="hidden sm:inline">لوحة الإدارة 👑</span>
+                  <span className="sm:hidden">الإدارة</span>
+                </button>
+              )}
 
             </div>
           </div>
@@ -1646,8 +1666,12 @@ export default function App() {
               <span className="hover:text-primary-400 cursor-pointer" onClick={() => { setActiveTab('seeker'); setSelectedProvider(null); }}>دليل البحث</span>
               <span>•</span>
               <span className="hover:text-primary-400 cursor-pointer" onClick={() => setActiveTab('provider_auth')}>تسجيل كحرفي</span>
-              <span>•</span>
-              <span className="hover:text-primary-400 cursor-pointer" onClick={() => setActiveTab('admin_auth')}>إدارة المنصة</span>
+              {showAdminTab && (
+                <>
+                  <span>•</span>
+                  <span className="hover:text-primary-400 cursor-pointer" onClick={() => setActiveTab('admin_auth')}>إدارة المنصة</span>
+                </>
+              )}
             </div>
           </div>
         </div>
