@@ -1,0 +1,6 @@
+{
+  "name": "خدمات وهران",
+  "description": "منصة خدمات محلية احترافية وحديثة لولاية وهران تربط بين الأشخاص الباحثين عن خدمات ومقدمي الخدمات المحليين.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
