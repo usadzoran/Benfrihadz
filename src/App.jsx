@@ -33,12 +33,12 @@ export default function App() {
   const [showAdminTab, setShowAdminTab] = useState(false)
   const [clickCount, setClickCount] = useState(0)
   
-  // App Core Database States
-  const [municipalities, setMunicipalities] = useState([])
-  const [categories, setCategories] = useState([])
-  const [providers, setProviders] = useState([])
-  const [reviews, setReviews] = useState([])
-  const [users, setUsers] = useState([])
+  // App Core Database States (Loaded instantly from local cache for robust offline-first behavior)
+  const [municipalities, setMunicipalities] = useState(() => JSON.parse(localStorage.getItem('municipalities') || '[]'))
+  const [categories, setCategories] = useState(() => JSON.parse(localStorage.getItem('service_categories') || '[]'))
+  const [providers, setProviders] = useState(() => JSON.parse(localStorage.getItem('service_providers') || '[]'))
+  const [reviews, setReviews] = useState(() => JSON.parse(localStorage.getItem('reviews') || '[]'))
+  const [users, setUsers] = useState(() => JSON.parse(localStorage.getItem('users') || '[]'))
   const [isSyncing, setIsSyncing] = useState(false)
   const [alert, setAlert] = useState(null)
 
@@ -843,224 +843,329 @@ export default function App() {
         {/* VIEW 2: PROVIDER PORTAL / AUTHENTICATION */}
         {/* ======================================================================== */}
         {activeTab === 'provider_auth' && (
-          <div className="max-w-md mx-auto bg-white rounded-3xl border border-slate-100 shadow-2xl p-6 sm:p-10 text-right animate-fadeIn">
+          <div className={`mx-auto bg-white rounded-3xl border border-slate-100 shadow-2xl overflow-hidden transition-all duration-300 animate-fadeIn ${
+            isProviderRegister ? 'max-w-2xl' : 'max-w-md'
+          }`}>
             
-            {/* Header Switcher */}
-            <div className="text-center space-y-2 mb-8">
-              <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto">
-                <Briefcase size={24} />
+            {/* Elegant Header with Accent Gradient */}
+            <div className={`p-6 sm:p-8 text-center relative overflow-hidden ${
+              isProviderRegister ? 'bg-gradient-to-br from-primary-800 to-indigo-950 text-white' : 'bg-slate-50 border-b border-slate-100'
+            }`}>
+              <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
+              
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4 transition-all duration-300 ${
+                isProviderRegister ? 'bg-white/10 text-white backdrop-blur-md' : 'bg-primary-600 text-white shadow-primary-200'
+              }`}>
+                <Briefcase size={26} className="stroke-[2.2]" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">
-                {isProviderRegister ? 'انضم كحرفي محترف وشريك' : 'لوحة تحكم الحرفيين'}
+              
+              <h3 className={`text-xl sm:text-2xl font-black tracking-tight ${
+                isProviderRegister ? 'text-white' : 'text-slate-900'
+              }`}>
+                {isProviderRegister ? 'انضم إلى دليل الحرفيين المعتمدين' : 'بوابة الحرفيين والشركاء'}
               </h3>
-              <p className="text-slate-400 text-xs font-semibold">
-                {isProviderRegister ? 'املأ معلوماتك لتقديم طلب انضمامك لقائمة الخدمات المعتمدة' : 'سجل دخولك لتعديل ملفك ومشاهدة إحصائياتك'}
+              <p className={`text-xs mt-1.5 font-bold leading-relaxed max-w-md mx-auto ${
+                isProviderRegister ? 'text-primary-200' : 'text-slate-500'
+              }`}>
+                {isProviderRegister 
+                  ? 'سجل معلوماتك المهنية والعملية لتصل إلى آلاف العملاء الباحثين عن خدماتك في وهران' 
+                  : 'سجل دخولك لتحديث ملفك الشخصي، إدارة خدماتك ومتابعة تقييمات العملاء'
+                }
               </p>
             </div>
 
-            {/* IF PROVIDER WANTS TO LOGIN */}
-            {!isProviderRegister ? (
-              <form onSubmit={handleProviderLogin} className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-extrabold text-slate-600 block">رقم الهاتف المسجل</label>
-                  <input 
-                    type="tel" 
-                    required
-                    placeholder="مثال: 0555123456"
-                    value={providerLoginPhone}
-                    onChange={(e) => setProviderLoginPhone(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-primary-500/10 text-xs sm:text-sm font-bold"
-                  />
-                </div>
+            <div className="p-6 sm:p-8 md:p-10 text-right">
+              {/* IF PROVIDER WANTS TO LOGIN */}
+              {!isProviderRegister ? (
+                <form onSubmit={handleProviderLogin} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-700 block">رقم الهاتف الجوال</label>
+                    <div className="relative">
+                      <input 
+                        type="tel" 
+                        required
+                        placeholder="مثال: 0555123456"
+                        value={providerLoginPhone}
+                        onChange={(e) => setProviderLoginPhone(e.target.value)}
+                        className="w-full pr-10 pl-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-sm font-bold text-slate-800 placeholder-slate-400"
+                      />
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <Phone size={18} />
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-extrabold text-slate-600 block">كلمة المرور الخاصة بك (هي رقم هاتفك افتراضياً)</label>
-                  <input 
-                    type="password" 
-                    required
-                    placeholder="مثال: 0555123456"
-                    value={providerLoginPass}
-                    onChange={(e) => setProviderLoginPass(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-100 focus:outline-none focus:ring-4 focus:ring-primary-500/10 text-xs sm:text-sm font-bold"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-700 block">كلمة المرور</label>
+                      <span className="text-[10px] font-bold text-slate-400">تلقائياً: رقم هاتفك إن لم تغيرها</span>
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type="password" 
+                        required
+                        placeholder="••••••••"
+                        value={providerLoginPass}
+                        onChange={(e) => setProviderLoginPass(e.target.value)}
+                        className="w-full pr-10 pl-4 py-3 sm:py-3.5 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-sm font-bold text-slate-800 placeholder-slate-400"
+                      />
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <Lock size={18} />
+                      </div>
+                    </div>
+                  </div>
 
-                <button 
-                  type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-sm transition-all shadow-lg shadow-primary-200"
-                >
-                  تسجيل الدخول للوحة التحكم
-                </button>
-
-                <div className="pt-4 text-center">
                   <button 
-                    type="button"
-                    onClick={() => setIsProviderRegister(true)}
-                    className="text-xs text-primary-600 font-extrabold hover:underline"
+                    type="submit"
+                    className="w-full py-3.5 sm:py-4 rounded-2xl bg-primary-600 hover:bg-primary-700 active:scale-[0.98] text-white font-black text-sm transition-all shadow-xl shadow-primary-200 flex items-center justify-center gap-2"
                   >
-                    ليس لديك حساب حرفي؟ قدم طلب انضمام الآن
+                    <span>تسجيل الدخول للوحة التحكم</span>
+                    <ChevronLeft size={16} />
                   </button>
-                </div>
-              </form>
-            ) : (
-              /* IF PROVIDER WANTS TO REGISTER */
-              <form onSubmit={handleProviderRegister} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">الاسم الأول *</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="أحمد"
-                      value={regFirstName}
-                      onChange={(e) => setRegFirstName(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">اللقب/العائلة *</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="بلقاسم"
-                      value={regLastName}
-                      onChange={(e) => setRegLastName(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-bold"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">البلدية الرئيسية *</label>
-                    <select
-                      required
-                      value={regMuni}
-                      onChange={(e) => setRegMuni(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-extrabold cursor-pointer"
+                  <div className="pt-4 text-center border-t border-slate-100">
+                    <button 
+                      type="button"
+                      onClick={() => setIsProviderRegister(true)}
+                      className="text-xs text-primary-600 font-extrabold hover:text-primary-700 hover:underline transition-all"
                     >
-                      <option value="">اختر...</option>
-                      {municipalities.map(m => (
-                        <option key={m.id} value={m.nameAr}>{m.nameAr}</option>
-                      ))}
-                    </select>
+                      ليس لديك حساب حرفي؟ قدم طلب انضمام الآن
+                    </button>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">تصنيف المهنة/الخدمة *</label>
-                    <select
-                      required
-                      value={regCategory}
-                      onChange={(e) => setRegCategory(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-extrabold cursor-pointer"
+                </form>
+              ) : (
+                /* IF PROVIDER WANTS TO REGISTER */
+                <form onSubmit={handleProviderRegister} className="space-y-6">
+                  
+                  {/* Visual Step Indicator 1: Personal Info */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                      <span className="w-6 h-6 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center text-xs font-black">1</span>
+                      <h4 className="text-sm font-black text-slate-800">المعلومات الشخصية الأساسية</h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 block">الاسم الأول *</label>
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            required
+                            placeholder="أحمد"
+                            value={regFirstName}
+                            onChange={(e) => setRegFirstName(e.target.value)}
+                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400"
+                          />
+                          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <UserIcon size={16} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 block">اللقب / العائلة *</label>
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            required
+                            placeholder="بلقاسم"
+                            value={regLastName}
+                            onChange={(e) => setRegLastName(e.target.value)}
+                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400"
+                          />
+                          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <UserIcon size={16} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 block">رقم الهاتف الجوال *</label>
+                        <div className="relative">
+                          <input 
+                            type="tel" 
+                            required
+                            placeholder="مثال: 0555123456"
+                            value={regPhone}
+                            onChange={(e) => setRegPhone(e.target.value)}
+                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400"
+                          />
+                          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <Phone size={16} />
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold mt-1">سيكون رقم الهاتف هو كلمة مرورك الافتراضية لتسجيل الدخول لاحقاً</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 block">سنوات الخبرة العملية *</label>
+                        <div className="relative">
+                          <input 
+                            type="number" 
+                            required
+                            min="1"
+                            placeholder="5"
+                            value={regExperience}
+                            onChange={(e) => setRegExperience(e.target.value)}
+                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 placeholder-slate-400"
+                          />
+                          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <Award size={16} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Step Indicator 2: Professional Details */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                      <span className="w-6 h-6 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center text-xs font-black">2</span>
+                      <h4 className="text-sm font-black text-slate-800">التصنيف المهني ونطاق التغطية</h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 block">تصنيف المهنة/الخدمة الرئيسية *</label>
+                        <div className="relative">
+                          <select
+                            required
+                            value={regCategory}
+                            onChange={(e) => setRegCategory(e.target.value)}
+                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 cursor-pointer appearance-none bg-white"
+                          >
+                            <option value="">اختر المهنة...</option>
+                            {categories.map(c => (
+                              <option key={c.id} value={c.nameAr}>{c.iconName} {c.nameAr}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <Briefcase size={16} />
+                          </div>
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">▼</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-600 block">البلدية الرئيسية لمقر عملك *</label>
+                        <div className="relative">
+                          <select
+                            required
+                            value={regMuni}
+                            onChange={(e) => setRegMuni(e.target.value)}
+                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 cursor-pointer appearance-none bg-white"
+                          >
+                            <option value="">اختر البلدية...</option>
+                            {municipalities.map(m => (
+                              <option key={m.id} value={m.nameAr}>{m.nameAr}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            <MapPin size={16} />
+                          </div>
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">▼</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-600 block">العنوان الدقيق والتفصيلي *</label>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="مثال: حي الياسمين، عمارة ب رقم 5، بئر الجير"
+                          value={regAddress}
+                          onChange={(e) => setRegAddress(e.target.value)}
+                          className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400"
+                        />
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                          <MapPin size={16} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Multiple Munis Coverage Selector */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-600 block">مناطق التغطية والعمل الإضافية الأخرى</label>
+                      <div className="flex flex-wrap gap-2 p-3 bg-slate-50/60 rounded-2xl border border-slate-100">
+                        {municipalities.map(m => {
+                          const active = regWorkMunis.includes(m.nameAr)
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => {
+                                if (active) {
+                                  setRegWorkMunis(prev => prev.filter(i => i !== m.nameAr))
+                                } else {
+                                  setRegWorkMunis(prev => [...prev, m.nameAr])
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                                active 
+                                  ? 'bg-primary-600 border-primary-600 text-white shadow-md shadow-primary-100' 
+                                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              {active && <Check size={12} />}
+                              <span>{m.nameAr}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Step Indicator 3: Short Description */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                      <span className="w-6 h-6 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center text-xs font-black">3</span>
+                      <h4 className="text-sm font-black text-slate-800">النبذة التعريفية للزبائن</h4>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-600 block">نبذة مختصرة تظهر للعملاء في ملفك الشخصي</label>
+                      <div className="relative">
+                        <textarea
+                          rows="3"
+                          placeholder="اكتب لمحة مبسطة عن جودة خدماتك، المواد المستخدمة، السرعة في الإنجاز والضمان المالي الذي تقدمه لزبائنك..."
+                          value={regShortDesc}
+                          onChange={(e) => setRegShortDesc(e.target.value)}
+                          className="w-full pr-10 pl-4 py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 leading-relaxed"
+                        ></textarea>
+                        <div className="absolute right-3.5 top-4 text-slate-400 pointer-events-none">
+                          <FileText size={16} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit and Switch */}
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <button 
+                      type="submit"
+                      className="w-full py-3.5 sm:py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black text-xs sm:text-sm transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
                     >
-                      <option value="">اختر...</option>
-                      {categories.map(c => (
-                        <option key={c.id} value={c.nameAr}>{c.nameAr}</option>
-                      ))}
-                    </select>
+                      <span>تقديم طلب الانضمام والتسجيل كحرفي معتمد</span>
+                      <Sparkles size={16} className="text-amber-300" />
+                    </button>
+
+                    <div className="text-center">
+                      <button 
+                        type="button"
+                        onClick={() => setIsProviderRegister(false)}
+                        className="text-[11px] text-slate-400 font-bold hover:text-slate-500 hover:underline transition-all"
+                      >
+                        لديك حساب بالفعل؟ تسجيل الدخول كشريك حرفي
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">العنوان الدقيق بالتفصيل *</label>
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="مثال: حي الياسمين عمارة ب رقم 5، وهران"
-                    value={regAddress}
-                    onChange={(e) => setRegAddress(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-semibold"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">رقم الهاتف الجوال *</label>
-                    <input 
-                      type="tel" 
-                      required
-                      placeholder="0555123456"
-                      value={regPhone}
-                      onChange={(e) => setRegPhone(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">سنوات الخبرة العملية *</label>
-                    <input 
-                      type="number" 
-                      required
-                      min="1"
-                      placeholder="5"
-                      value={regExperience}
-                      onChange={(e) => setRegExperience(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-100 focus:outline-none text-xs font-bold"
-                    />
-                  </div>
-                </div>
-
-                {/* Multiple Munis Coverage Selector */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">مناطق التغطية والعمل الإضافية</label>
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50 rounded-xl border border-slate-100">
-                    {municipalities.map(m => {
-                      const active = regWorkMunis.includes(m.nameAr)
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => {
-                            if (active) {
-                              setRegWorkMunis(prev => prev.filter(i => i !== m.nameAr))
-                            } else {
-                              setRegWorkMunis(prev => [...prev, m.nameAr])
-                            }
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition-all flex items-center gap-1 ${
-                            active 
-                              ? 'bg-primary-600 border-primary-600 text-white' 
-                              : 'bg-white border-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {active && <Check size={10} />}
-                          <span>{m.nameAr}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] sm:text-xs font-extrabold text-slate-600 block">نبذة مختصرة تظهر للزبائن</label>
-                  <textarea
-                    rows="2"
-                    placeholder="اكتب لمحة مبسطة عن خدماتك الاستثنائية..."
-                    value={regShortDesc}
-                    onChange={(e) => setRegShortDesc(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-100 focus:outline-none text-xs font-semibold leading-relaxed"
-                  ></textarea>
-                </div>
-
-                {/* تم إزالة حقل كلمة المرور أثناء التسجيل لتبسيط العملية وسيكون رقم الهاتف هو كلمة المرور الافتراضية */}
-
-                <button 
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-xs transition-all shadow-md shadow-primary-100"
-                >
-                  تسجيل وتقديم طلب انضمام
-                </button>
-
-                <div className="pt-2 text-center">
-                  <button 
-                    type="button"
-                    onClick={() => setIsProviderRegister(false)}
-                    className="text-[11px] text-slate-400 font-bold hover:underline"
-                  >
-                    لديك حساب بالفعل؟ تسجيل الدخول
-                  </button>
-                </div>
-              </form>
-            )}
+                </form>
+              )}
+            </div>
 
           </div>
         )}
