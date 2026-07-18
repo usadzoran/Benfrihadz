@@ -232,19 +232,25 @@ export const db = {
       // 1. Fetch Municipalities
       const { data: mData, error: mErr } = await supabase.from('municipalities').select('*')
       if (!mErr && mData && mData.length > 0) {
-        setLocal('municipalities', mData.map(d => ({ id: d.id, nameAr: d.name_ar })))
+        const cloudMunis = mData.map(d => ({ id: d.id, nameAr: d.name_ar }))
+        const localMunis = getLocal('municipalities')
+        const localOnly = localMunis.filter(lm => !cloudMunis.some(cm => cm.nameAr === lm.nameAr))
+        setLocal('municipalities', [...cloudMunis, ...localOnly])
       }
 
       // 2. Fetch Categories
       const { data: cData, error: cErr } = await supabase.from('service_categories').select('*')
       if (!cErr && cData && cData.length > 0) {
-        setLocal('service_categories', cData.map(d => ({ id: d.id, nameAr: d.name_ar, iconName: d.icon_name })))
+        const cloudCats = cData.map(d => ({ id: d.id, nameAr: d.name_ar, iconName: d.icon_name }))
+        const localCats = getLocal('service_categories')
+        const localOnly = localCats.filter(lc => !cloudCats.some(cc => cc.nameAr === lc.nameAr))
+        setLocal('service_categories', [...cloudCats, ...localOnly])
       }
 
       // 3. Fetch Service Providers
       const { data: pData, error: pErr } = await supabase.from('service_providers').select('*')
       if (!pErr && pData && pData.length > 0) {
-        setLocal('service_providers', pData.map(d => ({
+        const cloudProvs = pData.map(d => ({
           id: d.id,
           firstName: d.first_name,
           lastName: d.last_name,
@@ -261,26 +267,32 @@ export const db = {
           impressionsCount: d.impressions_count || 0,
           visitsCount: d.visits_count || 0,
           joinDate: parseInt(d.join_date) || Date.now()
-        })))
+        }))
+        const localProvs = getLocal('service_providers')
+        const localOnly = localProvs.filter(lp => !cloudProvs.some(cp => cp.phone === lp.phone))
+        setLocal('service_providers', [...cloudProvs, ...localOnly])
       }
 
       // 4. Fetch Reviews
       const { data: rData, error: rErr } = await supabase.from('reviews').select('*')
       if (!rErr && rData && rData.length > 0) {
-        setLocal('reviews', rData.map(d => ({
+        const cloudReviews = rData.map(d => ({
           id: d.id,
           providerId: d.provider_id,
           reviewerName: d.reviewer_name,
           rating: d.rating,
           comment: d.comment,
           timestamp: parseInt(d.timestamp) || Date.now()
-        })))
+        }))
+        const localReviews = getLocal('reviews')
+        const localOnly = localReviews.filter(lr => !cloudReviews.some(cr => cr.id === lr.id))
+        setLocal('reviews', [...cloudReviews, ...localOnly])
       }
 
       // 5. Fetch Users
       const { data: uData, error: uErr } = await supabase.from('users').select('*')
       if (!uErr && uData && uData.length > 0) {
-        setLocal('users', uData.map(d => ({
+        const cloudUsers = uData.map(d => ({
           id: d.id,
           firstName: d.first_name,
           lastName: d.last_name,
@@ -289,7 +301,10 @@ export const db = {
           phone: d.phone,
           password: d.password,
           role: d.role
-        })))
+        }))
+        const localUsers = getLocal('users')
+        const localOnly = localUsers.filter(lu => !cloudUsers.some(cu => cu.phone === lu.phone))
+        setLocal('users', [...cloudUsers, ...localOnly])
       }
 
       // 6. Fetch Admin Users
@@ -429,7 +444,7 @@ export const db = {
   async registerProvider(provider) {
     const list = getLocal('service_providers')
     const newId = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1
-    const newProvider = {
+    const finalProvider = {
       ...provider,
       id: newId,
       isApproved: 0, // Pending initially
@@ -437,12 +452,9 @@ export const db = {
       visitsCount: 0,
       joinDate: Date.now()
     }
-    list.push(newProvider)
-    setLocal('service_providers', list)
 
     try {
-      await supabase.from('service_providers').insert([{
-        id: newId,
+      const insertData = {
         first_name: provider.firstName,
         last_name: provider.lastName,
         municipality: provider.municipality,
@@ -450,7 +462,7 @@ export const db = {
         phone: provider.phone,
         profile_pic: provider.profilePic || '',
         service_type: provider.serviceType,
-        short_description: provider.shortDescription,
+        short_description: provider.shortDescription || '',
         years_of_experience: parseInt(provider.yearsOfExperience) || 1,
         municipalities: provider.municipalities,
         password: provider.password,
@@ -458,11 +470,35 @@ export const db = {
         impressions_count: 0,
         visits_count: 0,
         join_date: Date.now()
-      }])
+      }
+
+      console.log('Attempting to register provider in Supabase...', insertData)
+      // Try first WITHOUT manual ID to let database handle serial column auto-increment
+      const { data, error } = await supabase.from('service_providers').insert([insertData]).select()
+
+      if (error) {
+        console.warn('First insert attempt without ID failed, trying with manual ID:', error)
+        const { data: dataWithId, error: errorWithId } = await supabase
+          .from('service_providers')
+          .insert([{ ...insertData, id: newId }])
+          .select()
+
+        if (errorWithId) {
+          console.error('Second insert attempt with manual ID also failed:', errorWithId)
+          throw errorWithId
+        } else if (dataWithId && dataWithId.length > 0) {
+          finalProvider.id = dataWithId[0].id
+        }
+      } else if (data && data.length > 0) {
+        finalProvider.id = data[0].id
+      }
     } catch (e) {
-      console.warn('Supabase offline provider registration')
+      console.warn('Supabase registration failed, continuing with local storage registration:', e)
     }
-    return newProvider
+
+    list.push(finalProvider)
+    setLocal('service_providers', list)
+    return finalProvider
   },
 
   async updateProvider(id, updates) {
@@ -550,27 +586,48 @@ export const db = {
   async addReview(review) {
     const list = getLocal('reviews')
     const newId = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1
-    const newReview = {
+    const finalReview = {
       ...review,
       id: newId,
       timestamp: Date.now()
     }
-    list.push(newReview)
-    setLocal('reviews', list)
 
     try {
-      await supabase.from('reviews').insert([{
-        id: newId,
+      const insertData = {
         provider_id: review.providerId,
         reviewer_name: review.reviewerName,
         rating: review.rating,
         comment: review.comment,
         timestamp: Date.now()
-      }])
+      }
+
+      console.log('Attempting to add review in Supabase...', insertData)
+      // Try first WITHOUT manual ID to let database handle serial column auto-increment
+      const { data, error } = await supabase.from('reviews').insert([insertData]).select()
+
+      if (error) {
+        console.warn('First review insert attempt failed, trying with manual ID:', error)
+        const { data: dataWithId, error: errorWithId } = await supabase
+          .from('reviews')
+          .insert([{ ...insertData, id: newId }])
+          .select()
+
+        if (errorWithId) {
+          console.error('Second review insert attempt with manual ID also failed:', errorWithId)
+          throw errorWithId
+        } else if (dataWithId && dataWithId.length > 0) {
+          finalReview.id = dataWithId[0].id
+        }
+      } else if (data && data.length > 0) {
+        finalReview.id = data[0].id
+      }
     } catch (e) {
-      console.warn('Supabase offline review creation')
+      console.warn('Supabase review creation failed, continuing with local storage:', e)
     }
-    return newReview
+
+    list.push(finalReview)
+    setLocal('reviews', list)
+    return finalReview
   },
 
   async deleteReview(id) {
@@ -610,17 +667,14 @@ export const db = {
   async registerUser(user) {
     const list = getLocal('users')
     const newId = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1
-    const newUser = {
+    const finalUser = {
       ...user,
       id: newId,
       role: 'seeker'
     }
-    list.push(newUser)
-    setLocal('users', list)
 
     try {
-      await supabase.from('users').insert([{
-        id: newId,
+      const insertData = {
         first_name: user.firstName,
         last_name: user.lastName,
         municipality: user.municipality,
@@ -628,11 +682,35 @@ export const db = {
         phone: user.phone,
         password: user.password,
         role: 'seeker'
-      }])
+      }
+
+      console.log('Attempting to register user in Supabase...', insertData)
+      // Try first WITHOUT manual ID to let database handle serial column auto-increment
+      const { data, error } = await supabase.from('users').insert([insertData]).select()
+
+      if (error) {
+        console.warn('First user insert attempt failed, trying with manual ID:', error)
+        const { data: dataWithId, error: errorWithId } = await supabase
+          .from('users')
+          .insert([{ ...insertData, id: newId }])
+          .select()
+
+        if (errorWithId) {
+          console.error('Second user insert attempt with manual ID also failed:', errorWithId)
+          throw errorWithId
+        } else if (dataWithId && dataWithId.length > 0) {
+          finalUser.id = dataWithId[0].id
+        }
+      } else if (data && data.length > 0) {
+        finalUser.id = data[0].id
+      }
     } catch (e) {
-      console.warn('Supabase offline user registration')
+      console.warn('Supabase user registration failed, continuing with local storage registration:', e)
     }
-    return newUser
+
+    list.push(finalUser)
+    setLocal('users', list)
+    return finalUser
   },
 
   async deleteUser(id) {
