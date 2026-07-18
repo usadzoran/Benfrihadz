@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Retrieve credentials safely from Environment variables or fallback to Kotlin configs
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://qidegjmaufctggplgtp.supabase.co'
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || 'https://qidegjmauzfctggplgtp.supabase.co').replace(/\/rest\/v1\/?$/, '')
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZGVnam1hdXpmY3RnZ3BsZ3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMjc1NTIsImV4cCI6MjA5OTgwMzU1Mn0.MWyFesO0xNP88MFEUZwVqb2lXHGFwhFD-DlWKpmPAmE'
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
