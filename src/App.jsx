@@ -85,6 +85,9 @@ export default function App() {
   // Load all initial database records
   const loadDatabase = async () => {
     try {
+      // Sync local storage with live Supabase cloud database
+      await db.syncWithSupabase()
+
       const muniList = await db.getMunicipalities()
       const catList = await db.getCategories()
       const provList = await db.getProviders()
