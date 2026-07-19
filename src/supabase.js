@@ -330,8 +330,11 @@ export const db = {
       const { data, error } = await supabase.from('municipalities').select('*')
       if (error) throw error
       const list = data.map(d => ({ id: d.id, nameAr: d.name_ar }))
-      setLocal('municipalities', list)
-      return list
+      if (list && list.length > 0) {
+        setLocal('municipalities', list)
+        return list
+      }
+      return getLocal('municipalities')
     } catch (e) {
       console.log('Supabase offline: fallback to local municipalities')
       return getLocal('municipalities')
@@ -374,8 +377,11 @@ export const db = {
       const { data, error } = await supabase.from('service_categories').select('*')
       if (error) throw error
       const list = data.map(d => ({ id: d.id, nameAr: d.name_ar, iconName: d.icon_name }))
-      setLocal('service_categories', list)
-      return list
+      if (list && list.length > 0) {
+        setLocal('service_categories', list)
+        return list
+      }
+      return getLocal('service_categories')
     } catch (e) {
       return getLocal('service_categories')
     }
@@ -434,8 +440,11 @@ export const db = {
         visitsCount: d.visits_count || 0,
         joinDate: parseInt(d.join_date) || Date.now()
       }))
-      setLocal('service_providers', list)
-      return list
+      if (list && list.length > 0) {
+        setLocal('service_providers', list)
+        return list
+      }
+      return getLocal('service_providers')
     } catch (e) {
       return getLocal('service_providers')
     }

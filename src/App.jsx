@@ -500,13 +500,14 @@ export default function App() {
                     <select
                       value={selectedMuni}
                       onChange={(e) => setSelectedMuni(e.target.value)}
-                      className="w-full h-14 pr-12 pl-8 rounded-2xl bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-primary-500/40 text-sm appearance-none cursor-pointer transition-all"
+                      className="w-full h-14 pr-12 pl-10 rounded-2xl bg-white text-slate-800 font-bold focus:outline-none focus:ring-4 focus:ring-primary-500/40 text-sm appearance-none cursor-pointer transition-all"
                     >
                       <option value="الكل">كل البلديات 📍</option>
                       {municipalities.map(m => (
                         <option key={m.id} value={m.nameAr}>{m.nameAr}</option>
                       ))}
                     </select>
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">▼</div>
                   </div>
                 </div>
               </div>
@@ -1034,7 +1035,7 @@ export default function App() {
                             required
                             value={regCategory}
                             onChange={(e) => setRegCategory(e.target.value)}
-                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 cursor-pointer appearance-none bg-white"
+                            className="w-full pr-10 pl-8 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 cursor-pointer bg-white"
                           >
                             <option value="">اختر المهنة...</option>
                             {categories.map(c => (
@@ -1044,7 +1045,6 @@ export default function App() {
                           <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                             <Briefcase size={16} />
                           </div>
-                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">▼</div>
                         </div>
                       </div>
 
@@ -1055,7 +1055,7 @@ export default function App() {
                             required
                             value={regMuni}
                             onChange={(e) => setRegMuni(e.target.value)}
-                            className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 cursor-pointer appearance-none bg-white"
+                            className="w-full pr-10 pl-8 py-2.5 sm:py-3 rounded-2xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all duration-200 text-xs sm:text-sm font-bold text-slate-800 cursor-pointer bg-white"
                           >
                             <option value="">اختر البلدية...</option>
                             {municipalities.map(m => (
@@ -1065,7 +1065,6 @@ export default function App() {
                           <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                             <MapPin size={16} />
                           </div>
-                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]">▼</div>
                         </div>
                       </div>
                     </div>
